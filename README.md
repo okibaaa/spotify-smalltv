@@ -102,9 +102,16 @@ make monitor MONITOR_PORT=/dev/ttyUSB0
   "title": "曲名",
   "artist": "アーティスト名",
   "progress_ms": 83200,
-  "duration_ms": 224000
+  "duration_ms": 224000,
+  "stale": false,
+  "error": null
 }
 ```
+
+- `progress_ms` は応答時刻まで補間済み
+- Spotify 側の情報が 15 秒以上更新されていないと `stale: true` になり、
+  直近の失敗理由が `error` に入る（デバイスはエラー画面を表示）
+- ジャケットが無い曲は `art_id: "no-art"` のプレースホルダ画像を返す
 
 ## 設定
 
@@ -112,9 +119,12 @@ make monitor MONITOR_PORT=/dev/ttyUSB0
 |---|---|---|
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | (必須) | Spotify アプリの認証情報 |
 | `SPOTIFY_REDIRECT_URI` | `http://127.0.0.1:8888/callback` | アプリ登録と一致させる |
+| `SPOTIFY_TV_HOST` | `0.0.0.0` | デーモンのリッスンアドレス |
 | `SPOTIFY_TV_PORT` | `8888` | デーモンの待ち受けポート |
+| `SPOTIFY_TV_POLL_INTERVAL` | `3.0` | Spotify ポーリング間隔（秒） |
+| `SPOTIFY_TV_CACHE` | `~/.config/spotify-tv/credentials.json` | トークンの保存先 |
 
-トークンは `~/.config/spotify-tv/credentials.json` に保存されます。
+トークンは既定で `~/.config/spotify-tv/credentials.json` に保存されます。
 
 ## トラブルシューティング
 

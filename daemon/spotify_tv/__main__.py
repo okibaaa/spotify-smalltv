@@ -13,7 +13,7 @@ from .config import Config
 from .demo import DemoPoller
 from .poller import Poller
 from .server import create_app
-from .state import SharedState
+from .state import STALE_AFTER_SECONDS, SharedState
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -38,7 +38,10 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     cfg = Config.from_env()
-    state = SharedState()
+    state = SharedState(
+        # ポーリング間隔を極端に長くしても stale 判定が暴発しないようにする
+        stale_after_seconds=max(STALE_AFTER_SECONDS, cfg.poll_interval * 5)
+    )
     cache = ArtCache()
 
     if args.demo:
