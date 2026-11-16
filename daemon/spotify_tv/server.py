@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, Response
 
@@ -12,8 +10,16 @@ from .state import SharedState
 
 NO_STORE = {"Cache-Control": "no-store"}
 
+# デバイスの HTTP タイムアウト (4 秒) より短くする。
+# 間に合わなければ 404 を返し、次のポーリングで取り直してもらう。
+DEFAULT_ART_WAIT_SECONDS = 2.0
 
-def create_app(state: SharedState, cache: ArtCache) -> FastAPI:
+
+def create_app(
+    state: SharedState,
+    cache: ArtCache,
+    art_wait_seconds: float = DEFAULT_ART_WAIT_SECONDS,
+) -> FastAPI:
     app = FastAPI(title="Spotify SmallTV daemon", version="0.1.0")
 
     @app.get("/api/health")
@@ -28,21 +34,21 @@ def create_app(state: SharedState, cache: ArtCache) -> FastAPI:
     def art(art_id: str) -> Response:
         # The firmware asks for artwork immediately after /api/now, so wait
         # briefly for the poller's prefetch instead of returning 404.
-        deadline = time.monotonic() + 5.0
-        while True:
-            data = cache.get(art_id)
-            if data is not None:
-                return Response(
-                    content=data,
-                    media_type="application/octet-stream",
-                    headers={
-                        **NO_STORE,
-                        "Content-Length": str(FRAME_BYTES),
-                    },
-                )
-            if time.monotonic() >= deadline:
-                raise HTTPException(status_code=404, detail="artwork not ready")
-            time.sleep(0.1)
+        data = cache.wait_for(art_id, timeout=art_wait_seconds)
+        if data is None:
+            raise HTTPException(
+                status_code=404,
+                detail="artwork not ready",
+                headers={"Retry-After": "1", **NO_STORE},
+            )
+        return Response(
+            content=data,
+            media_type="application/octet-stream",
+            headers={
+                **NO_STORE,
+                "Content-Length": str(FRAME_BYTES),
+            },
+        )
 
     @app.get("/")
     def index() -> dict:
