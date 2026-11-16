@@ -82,6 +82,7 @@ bool fetchNowPlaying(NowPlaying &out) {
   }
 
   out.playing = doc["playing"] | false;
+  out.stale = doc["stale"] | false;
   copyString(out.trackId, sizeof(out.trackId), doc["track_id"] | "");
   copyString(out.artId, sizeof(out.artId), doc["art_id"] | "");
   copyString(out.title, sizeof(out.title), doc["title"] | "");

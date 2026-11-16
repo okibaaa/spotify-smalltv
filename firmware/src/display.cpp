@@ -43,6 +43,15 @@ void drawHeader(const char *subtitle) {
     drawCentered(subtitle, 162, 2, TFT_LIGHTGREY);
   }
 }
+
+void drawErrorScreen(const char *title, const char *line) {
+  display::tft.fillScreen(TFT_BLACK);
+  drawCentered(title, 90, 4, TFT_ORANGE);
+  if (line && line[0]) {
+    drawCentered(line, 128, 2, TFT_LIGHTGREY);
+  }
+  drawCentered("Retrying...", 156, 2, TFT_DARKGREY);
+}
 }  // namespace
 
 TFT_eSPI display::tft = TFT_eSPI();
@@ -69,13 +78,14 @@ void showBoot(const char *subtitle) { drawHeader(subtitle); }
 
 void showIdle() { drawHeader("Not playing"); }
 
-void showError(const char *line) {
-  tft.fillScreen(TFT_BLACK);
-  drawCentered("Connection error", 90, 4, TFT_ORANGE);
-  if (line && line[0]) {
-    drawCentered(line, 128, 2, TFT_LIGHTGREY);
-  }
-  drawCentered("Retrying...", 156, 2, TFT_DARKGREY);
+void showError(const char *line) { drawErrorScreen("Connection error", line); }
+
+void showSpotifyError() {
+  drawErrorScreen("Spotify error", "Check daemon log");
+}
+
+void showArtworkError() {
+  drawErrorScreen("Artwork error", "Retrying image download");
 }
 
 void showWifiError() {

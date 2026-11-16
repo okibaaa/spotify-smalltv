@@ -9,8 +9,9 @@
 
 // /api/now のスナップショット
 struct NowPlaying {
-  bool valid = false;
   bool playing = false;
+  // デーモンが Spotify から取得した情報が古い (認証切れ・API 障害など)
+  bool stale = false;
   char trackId[48] = {0};
   char artId[20] = {0};
   char title[96] = {0};

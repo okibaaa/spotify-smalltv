@@ -11,10 +11,20 @@
 
 namespace {
 
-enum class State { Boot, WifiError, ConnError, Idle, Playing };
+enum class State {
+  Boot,
+  WifiError,
+  ConnError,
+  SpotifyError,
+  ArtError,
+  Idle,
+  Playing,
+};
 
 State state = State::Boot;
 NowPlaying now;
+// 現在画面に描画済みのジャケット ID (空文字は未描画)
+char drawnArtId[20] = {0};
 uint32_t lastPollMs = 0;
 uint32_t lastBarMs = 0;
 uint32_t lastWifiRetryMs = 0;
@@ -32,6 +42,12 @@ void setState(State next) {
     case State::ConnError:
       display::showError("Daemon unreachable");
       break;
+    case State::SpotifyError:
+      display::showSpotifyError();
+      break;
+    case State::ArtError:
+      display::showArtworkError();
+      break;
     case State::Idle:
       display::showIdle();
       break;
@@ -40,42 +56,45 @@ void setState(State next) {
   }
 }
 
-void pollOnce(uint32_t nowMs) {
+void pollOnce() {
   NowPlaying fresh;
   if (!fetchNowPlaying(fresh)) {
     setState(State::ConnError);
     return;
   }
 
-  const bool trackChanged =
-      !now.valid || std::strcmp(fresh.trackId, now.trackId) != 0 ||
-      std::strcmp(fresh.artId, now.artId) != 0;
-
   now = fresh;
-  now.valid = true;
+
+  // デーモンは応答するが Spotify 側の情報が古い (認証切れ・API 障害)
+  if (now.stale) {
+    setState(State::SpotifyError);
+    return;
+  }
 
   if (!now.playing) {
     setState(State::Idle);
     return;
   }
 
-  // 曲が変わった、または停止状態から復帰したときだけ画像を取り直す。
-  if (trackChanged || state != State::Playing) {
-    if (state == State::Boot || state == State::ConnError) {
-      display::showBoot("Loading artwork...");
-    }
+  // ジャケットを描き直す必要があるのは、曲が変わったときと
+  // 「Playing 以外の画面」(Idle/エラー復帰) から来たときだけ。
+  const bool needArt =
+      state != State::Playing || std::strcmp(now.artId, drawnArtId) != 0;
+  if (!needArt) return;
 
-    Serial.printf("[main] fetching art %s\n", now.artId);
-    if (!fetchAndDrawArt(now.artId)) {
-      setState(State::ConnError);
-      return;
-    }
-
-    display::drawBaseBand();
-    display::drawProgressBar(progressRatio(now, now.fetchedAtMs));
-    lastBarMs = now.fetchedAtMs;
-    state = State::Playing;
+  Serial.printf("[main] fetching art %s\n", now.artId);
+  if (!fetchAndDrawArt(now.artId)) {
+    // 次回ポーリングで再試行する (ここで ConnError にはしない)
+    setState(State::ArtError);
+    return;
   }
+
+  strlcpy(drawnArtId, now.artId, sizeof(drawnArtId));
+  const uint32_t drawnAtMs = millis();
+  display::drawBaseBand();
+  display::drawProgressBar(progressRatio(now, drawnAtMs));
+  lastBarMs = drawnAtMs;
+  state = State::Playing;
 }
 
 }  // namespace
@@ -136,7 +155,7 @@ void loop() {
 
   if (nowMs - lastPollMs >= POLL_INTERVAL_MS) {
     lastPollMs = nowMs;
-    pollOnce(nowMs);
+    pollOnce();
   }
 
   if (state == State::Playing) {
