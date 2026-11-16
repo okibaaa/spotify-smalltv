@@ -1,5 +1,8 @@
 # Spotify SmallTV
 
+[![CI](https://github.com/okibaaa/spotify-smalltv/actions/workflows/ci.yml/badge.svg)](https://github.com/okibaaa/spotify-smalltv/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 GeekMagic SmallTV-Ultra (ESP8266 + ST7789 240x240) に
 **Spotify で再生中の曲のジャケット写真とプログレスバー**を表示するカスタムファームウェアと、
 そのための PC 常駐デーモンです。
@@ -270,25 +273,17 @@ GitHub Actions (`.github/workflows/ci.yml`) が push / PR ごとに実行され�
 
 ---
 
-## GitHub に公開するまで
+## GitHub リポジトリ
 
-このリポジトリは初期コミット済みのローカル Git リポジトリです。
-GitHub 上に空のリポジトリを作成したら、以下を実行します。
+公開先: **https://github.com/okibaaa/spotify-smalltv**
 
-```bash
-git remote add origin https://github.com/<your-name>/spotify-smalltv.git
-git push -u origin main
-```
-
-GitHub CLI を使う場合:
+フォークして自分の環境で使う場合:
 
 ```bash
-gh repo create spotify-smalltv --private --source=. --remote=origin --push
+git clone https://github.com/<your-name>/spotify-smalltv.git
+cd spotify-smalltv
+make setup
 ```
-
-> `firmware/include/config.h` と `.env` は `.gitignore` 済みです。
-> Wi-Fi パスワードや Spotify のシークレットがコミットされていないか、
-> push 前に `git status` で確認してください。
 
 ---
 
