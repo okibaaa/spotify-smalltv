@@ -11,6 +11,8 @@ void setBacklight(uint8_t level);
 void showBoot(const char *subtitle);
 void showIdle();
 void showError(const char *line);
+void showSpotifyError();
+void showArtworkError();
 void showWifiError();
 
 // ジャケット下部の黒帯 + プログレスバー
