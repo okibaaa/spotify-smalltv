@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from .artwork import FRAME_BYTES, ArtCache
 from .state import SharedState
 
 NO_STORE = {"Cache-Control": "no-store"}
+
+# ブラウザ用シミュレーター（静的ファイル）
+WEB_DIR = Path(__file__).resolve().parent / "web"
 
 # デバイスの HTTP タイムアウト (4 秒) より短くする。
 # 間に合わなければ 404 を返し、次のポーリングで取り直してもらう。
@@ -55,8 +61,17 @@ def create_app(
         track = state.public_dict()
         return {
             "service": "spotify-smalltv-daemon",
-            "endpoints": ["/api/health", "/api/now", "/api/art/{art_id}.bin"],
+            "endpoints": [
+                "/api/health",
+                "/api/now",
+                "/api/art/{art_id}.bin",
+                "/sim/",
+            ],
             "track": track,
         }
+
+    # ブラウザで動くシミュレーター: http://<daemon>:8888/sim/
+    if WEB_DIR.is_dir():
+        app.mount("/sim", StaticFiles(directory=WEB_DIR, html=True), name="sim")
 
     return app

@@ -73,3 +73,18 @@ def test_art_missing_returns_404_without_delay() -> None:
     assert response.status_code == 404
     assert response.headers["retry-after"] == "1"
     assert time.monotonic() - started < 1.0
+
+
+def test_simulator_is_served() -> None:
+    client, _, _ = make_client()
+    page = client.get("/sim/")
+    assert page.status_code == 200
+    assert "text/html" in page.headers["content-type"]
+    assert "Spotify SmallTV" in page.text
+
+    for asset, mime in (("app.js", "javascript"), ("style.css", "css")):
+        response = client.get(f"/sim/{asset}")
+        assert response.status_code == 200
+        assert mime in response.headers["content-type"]
+
+    assert "/sim/" in client.get("/").json()["endpoints"]

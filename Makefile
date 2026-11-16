@@ -41,6 +41,7 @@ smoke:
 	PYTHON=daemon/.venv/bin/python bash scripts/smoke-test.sh
 
 demo:
+	@echo "Web simulator: http://localhost:$${SPOTIFY_TV_PORT:-8888}/sim/"
 	cd daemon && .venv/bin/python -m spotify_tv --demo
 
 login:

@@ -24,3 +24,6 @@ spotify-tv-login = "spotify_tv.auth:main"
 
 [tool.setuptools]
 packages = ["spotify_tv"]
+
+[tool.setuptools.package-data]
+spotify_tv = ["web/*"]
