@@ -116,14 +116,6 @@ make monitor MONITOR_PORT=/dev/ttyUSB0
 
 トークンは `~/.config/spotify-tv/credentials.json` に保存されます。
 
-## 開発
-
-- **Dev Container / Codespaces**: `.devcontainer/` に Python + PlatformIO + esptool 入りの環境を同梱
-- **Docker**: `docker compose up --build -d` でデーモンを常駐
-- **CI**: push ごとにファームのビルドとデーモンのテストを実行。`v*` タグで書き込み用 bin を Release に添付
-
-`firmware/include/config.h` と `.env` は `.gitignore` 済みです。認証情報はコミットされません。
-
 ## トラブルシューティング
 
 | 症状 | 対処 |
