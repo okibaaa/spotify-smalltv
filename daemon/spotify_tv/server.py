@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from .artwork import FRAME_BYTES, ArtCache
@@ -21,6 +22,18 @@ def create_app(
     art_wait_seconds: float = DEFAULT_ART_WAIT_SECONDS,
 ) -> FastAPI:
     app = FastAPI(title="Spotify SmallTV daemon", version="0.1.0")
+
+    # ブラウザ用シミュレーター
+    # (https://github.com/okibaaa/spotify-smalltv-simulator) は別オリジンから
+    # /api/* を読むため CORS を許可する。認証情報を扱わない読み取り専用の
+    # API なので、オリジンは制限しない。
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["GET"],
+        allow_headers=["*"],
+        max_age=600,
+    )
 
     @app.get("/api/health")
     def health() -> dict:

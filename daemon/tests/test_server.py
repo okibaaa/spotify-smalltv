@@ -73,3 +73,22 @@ def test_art_missing_returns_404_without_delay() -> None:
     assert response.status_code == 404
     assert response.headers["retry-after"] == "1"
     assert time.monotonic() - started < 1.0
+
+
+def test_api_allows_cross_origin_reads() -> None:
+    client, _, _ = make_client(art_wait_seconds=0.0)
+    origin = {"Origin": "https://okibaaa.github.io"}
+
+    # 読み取りは成功・失敗どちらでも CORS ヘッダが付く
+    for path in ("/api/health", "/api/now", "/api/art/abc123.bin", "/api/art/unknown.bin"):
+        response = client.get(path, headers=origin)
+        assert response.headers["access-control-allow-origin"] == "*"
+
+    # プリフライト (GET のみ)
+    preflight = client.options(
+        "/api/now",
+        headers={**origin, "Access-Control-Request-Method": "GET"},
+    )
+    assert preflight.status_code == 200
+    assert preflight.headers["access-control-allow-origin"] == "*"
+    assert "GET" in preflight.headers["access-control-allow-methods"]
