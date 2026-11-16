@@ -43,7 +43,17 @@ make demo
 curl http://localhost:8888/api/now
 ```
 
-### 3. Spotify と連携
+### 3. ブラウザで動くシミュレーター
+
+実機の表示と状態遷移をブラウザで確認できるシミュレーターを、別リポジトリで公開しています。
+
+- 公開版: <https://okibaaa.github.io/spotify-smalltv-simulator/>
+- ソース: <https://github.com/okibaaa/spotify-smalltv-simulator>
+
+モックモードなら Spotify もデーモンも不要です。`make demo` でデーモンを起動したうえで
+「Daemon」タブを選ぶと、実際のジャケットと進捗をそのまま表示できます。
+
+### 4. Spotify と連携
 
 1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) でアプリを作成
 2. Redirect URI に `http://127.0.0.1:8888/callback` を追加
@@ -58,7 +68,7 @@ make daemon
 
 デーモンは `0.0.0.0:8888` で待ち受けます。PC のファイアウォールで 8888/tcp を許可してください。
 
-### 4. デバイスに書き込み
+### 5. デバイスに書き込み
 
 `firmware/include/config.h` に Wi-Fi と PC の IP を設定してから書き込みます。
 
@@ -91,6 +101,9 @@ make monitor MONITOR_PORT=/dev/ttyUSB0
 | `GET /api/now` | 再生状態・曲情報・進捗の JSON |
 | `GET /api/art/{art_id}.bin` | 240x240 RGB565（リトルエンディアン、115,200 バイト固定） |
 | `GET /api/health` | 死活監視 |
+
+ブラウザのシミュレーターから直接読めるよう、`/api/*` はクロスオリジン GET を許可しています
+（`Access-Control-Allow-Origin: *`。認証情報を扱わない読み取り専用 API のため）。
 
 `/api/now` の例:
 
