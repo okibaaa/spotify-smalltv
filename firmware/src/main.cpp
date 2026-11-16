@@ -25,6 +25,8 @@ State state = State::Boot;
 NowPlaying now;
 // 現在画面に描画済みのジャケット ID (空文字は未描画)
 char drawnArtId[20] = {0};
+// 曲の終端で即時ポーリングを 1 回だけ行うためのフラグ
+bool endOfTrackPolled = false;
 uint32_t lastPollMs = 0;
 uint32_t lastBarMs = 0;
 uint32_t lastWifiRetryMs = 0;
@@ -63,6 +65,8 @@ void pollOnce() {
     return;
   }
 
+  // 曲が変わったら終端ポーリングのフラグを戻す
+  if (std::strcmp(fresh.trackId, now.trackId) != 0) endOfTrackPolled = false;
   now = fresh;
 
   // デーモンは応答するが Spotify 側の情報が古い (認証切れ・API 障害)
@@ -161,8 +165,14 @@ void loop() {
   if (state == State::Playing) {
     const uint32_t position = currentPositionMs(now, nowMs);
     if (now.durationMs > 0 && position >= now.durationMs) {
-      // 曲の終端に到達: 次のループで即座に取り直す
-      lastPollMs = nowMs - POLL_INTERVAL_MS;
+      // 曲の終端に到達: 即座に取り直す。ただし同じ曲のまま何度も
+      // ポーリングしないよう、1 曲につき 1 回だけにする。
+      if (!endOfTrackPolled) {
+        endOfTrackPolled = true;
+        lastPollMs = nowMs - POLL_INTERVAL_MS;
+      }
+    } else {
+      endOfTrackPolled = false;
     }
 
     if (nowMs - lastBarMs >= 1000) {
