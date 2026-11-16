@@ -1,0 +1,15 @@
+services:
+  daemon:
+    build:
+      context: .
+      dockerfile: daemon/Dockerfile
+    ports:
+      - "8888:8888"
+    env_file:
+      - .env
+    volumes:
+      - spotify-tv-config:/root/.config/spotify-tv
+    restart: unless-stopped
+
+volumes:
+  spotify-tv-config:

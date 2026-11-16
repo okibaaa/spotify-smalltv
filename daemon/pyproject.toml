@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spotify-smalltv-daemon"
+version = "0.1.0"
+description = "Spotify now-playing bridge for GeekMagic SmallTV-Ultra"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "spotipy>=2.24",
+    "Pillow>=10.0",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[project.scripts]
+spotify-tv-daemon = "spotify_tv.__main__:main"
+spotify-tv-login = "spotify_tv.auth:main"
+
+[tool.setuptools]
+packages = ["spotify_tv"]
