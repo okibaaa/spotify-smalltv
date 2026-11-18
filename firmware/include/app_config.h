@@ -14,3 +14,11 @@
 #else
 #error "firmware/include/config.h がありません。`cp include/config.example.h include/config.h` を実行してください。"
 #endif
+
+// 古い config.h でもビルドできるように既定値を用意する
+#ifndef OTA_ENABLED
+#define OTA_ENABLED 1
+#endif
+#ifndef WIFI_RESCUE_DELAY_MS
+#define WIFI_RESCUE_DELAY_MS 30000
+#endif

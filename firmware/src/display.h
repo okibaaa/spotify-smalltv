@@ -14,6 +14,7 @@ void showError(const char *line);
 void showSpotifyError();
 void showArtworkError();
 void showWifiError();
+void showApInfo(const char *ssid, const char *ip);
 
 // ジャケット下部の黒帯 + プログレスバー
 void drawBaseBand();

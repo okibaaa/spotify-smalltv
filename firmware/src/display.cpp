@@ -95,6 +95,16 @@ void showWifiError() {
   drawCentered("Retrying...", 156, 2, TFT_DARKGREY);
 }
 
+void showApInfo(const char *ssid, const char *ip) {
+  tft.fillScreen(TFT_BLACK);
+  drawCentered("Recovery mode", 44, 4, TFT_ORANGE);
+  drawCentered("Wi-Fi not connected", 74, 2, TFT_LIGHTGREY);
+  drawCentered("Connect to:", 108, 2, TFT_DARKGREY);
+  drawCentered(ssid, 128, 2, TFT_WHITE);
+  drawCentered(ip, 156, 4, TFT_GREEN);
+  drawCentered("then open /update", 188, 2, TFT_DARKGREY);
+}
+
 void drawBaseBand() { tft.fillRect(0, kBandY, kScreen, kBandH, TFT_BLACK); }
 
 void drawProgressBar(float ratio) {

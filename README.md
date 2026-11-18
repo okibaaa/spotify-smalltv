@@ -19,6 +19,7 @@ Spotify ──HTTPS──▶ PC デーモン ──HTTP (LAN)──▶ SmallTV
 - ジャケット全画面表示 + 下部プログレスバー（1 秒ごとに更新）
 - 曲変更の自動検知・自動差し替え
 - 停止中 / デーモン未接続 / Wi-Fi 切断を画面表示し、自動復帰
+- Wi-Fi 経由の更新（OTA）と、繋がらない時の**復旧用 AP** を内蔵
 - Spotify アカウント不要の**デモモード**内蔵
 
 ## クイックスタート
@@ -82,6 +83,7 @@ make monitor MONITOR_PORT=/dev/ttyUSB0
 ```
 
 配線・分解・バックアップ・復旧の詳細は **[firmware/FLASHING.md](firmware/FLASHING.md)** を参照してください。
+一度書き込んだ後は `http://<本体のIP>/update` から Wi-Fi で更新できます（UART 不要）。
 
 ## よく使うコマンド
 
@@ -137,6 +139,9 @@ make monitor MONITOR_PORT=/dev/ttyUSB0
 | `SPOTIFY_TV_POLL_INTERVAL` | `3.0` | Spotify ポーリング間隔（秒） |
 | `SPOTIFY_TV_CACHE` | `~/.config/spotify-tv/credentials.json` | トークンの保存先 |
 
+ファーム側の `config.h` には `OTA_WEB_USER` / `OTA_WEB_PASS`（Web 更新の認証）と
+`OTA_AP_PASSWORD`（復旧用 AP のパスワード）があります。`CHANGE_ME` のままにせず変更してください。
+
 トークンは既定で `~/.config/spotify-tv/credentials.json` に保存されます。
 
 ## トラブルシューティング
@@ -147,6 +152,7 @@ make monitor MONITOR_PORT=/dev/ttyUSB0
 | 色が赤青反転 | `platformio.ini` の `TFT_RGB_ORDER` を `TFT_BGR` ↔ `TFT_RGB` |
 | Daemon unreachable | `config.h` の IP、PC のファイアウォール、同一 LAN を確認 |
 | Wi-Fi に繋がらない | 2.4GHz のみ対応。SSID / パスワードを確認 |
+| 画面が `Recovery mode` | 表示された `SmallTV-Setup-xxxxxx` に接続し `http://192.168.4.1/` から再設定・更新 |
 | 書き込みが `Connecting...` で止まる | GPIO0 を GND、TX/RX クロス、RST を一瞬 GND |
 
 ## ドキュメント

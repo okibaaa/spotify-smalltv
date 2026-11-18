@@ -2,8 +2,21 @@
 
 対象: GeekMagic SmallTV-Ultra (ESP8266 / ESP-12E, 4MB Flash)
 
-> 純正 Web コンソールからの書き換えは Magic Byte チェックがあり、
-> カスタムファームウェアは書けません。**有線 UART 書き込み**を行います。
+> 純正ファームの Web 更新画面（`/update`）は ESP8266 イメージの形式チェック
+> （Magic Byte）を行います。本プロジェクトの `firmware.bin` は公式ファームと
+> 同じ「eboot + app」形式なので通る可能性が高いですが、ロットやファームの
+> バージョンによっては拒否されることがあります。その場合はシリアル書き込みが
+> 必要です。
+
+## 書き込み方法は 2 通り
+
+| 方法 | 必要なもの | 純正バックアップ |
+|---|---|---|
+| シリアル (UART) | 3.3V USB-シリアル変換 | **取れる** |
+| Wi-Fi (OTA) | 純正ファーム + ブラウザ | 取れない |
+
+迷ったらシリアル（この下の手順）。UART 変換が無い場合は
+末尾の「付録: Wi-Fi (OTA) で書き込む」を参照してください。
 
 ---
 
@@ -205,8 +218,65 @@ https://github.com/GeekMagicClock/smalltv-ultra
 
 ## メモ: 書き込み後の更新
 
-本ファームウェアは OTA を実装していません。
-更新時は毎回このシリアル手順が必要です。
+本ファームウェアは Wi-Fi 経由の更新（OTA）に対応しています。
+一度書き込めば、以降は `http://<本体のIP>/update` から更新できます。
+Wi-Fi に繋がらない場合は、本体が `SmallTV-Setup-xxxxxx` の復旧用 AP を
+自動で立てます（画面に SSID と IP を表示）。
 
 繰り返し開発する場合は、6ピンヘッダを半田付けしておくと
 ジャンパを差し替えるだけで書き込めます。
+
+---
+
+## 付録: Wi-Fi (OTA) で書き込む
+
+UART 変換が無くても、純正ファームの Web 更新ページから書き換えられます。
+ただし **純正ファームのフルバックアップは取れません**。
+
+### 前提
+
+- 純正ファームが Wi-Fi に接続済み（公式アプリで設定）
+- PC と本体が同じ LAN にいる
+
+### 手順
+
+1. ルーターのクライアント一覧などで本体の IP を調べる（例 `192.168.35.42`）
+2. `http://<IP>/update` を開く
+3. `firmware/.pio/build/smalltv-ultra/firmware.bin` をアップロード
+
+```bash
+# ブラウザの代わりに curl でも可
+curl -F "firmware=@firmware.bin" http://<IP>/update
+```
+
+4. `Update Success! Rebooting...` → 自動再起動
+5. 画面が `Connecting Wi-Fi` → ジャケット表示になれば成功
+
+### 失敗したとき（画面が復旧モード）
+
+Wi-Fi に繋がらないと、本体が復旧用 AP を立てます。
+
+| 項目 | 値 |
+|---|---|
+| SSID | `SmallTV-Setup-xxxxxx`（画面に表示） |
+| パスワード | `config.h` の `OTA_AP_PASSWORD` |
+| 更新ページ | `http://192.168.4.1/` |
+| ログイン | `OTA_WEB_USER` / `OTA_WEB_PASS` |
+
+AP に接続して `firmware.bin` を再アップロードしてください。
+
+### 純正ファームに戻す
+
+公式リポジトリの bin を、同じ更新ページからアップロードします。
+
+- https://github.com/GeekMagicClock/smalltv-ultra
+- 例: `Ultra-V9.0.50/FW-Smalltv-Ultra-V9.0.50.zip` 内の
+  `FW-Smalltv-Ultra-V9.0.50.bin`
+- MD5: `a5fe50093ada3c2637225bbf306a62c3`（V9.0.50）
+
+### 注意
+
+- 公式 bin と自作 bin はどちらも「eboot + app」形式です
+  （先頭 3,488 バイトの eboot は公式 V9.0.50 とバイト一致を確認済み）
+- ただしフラッシュ全体のダンプではないため、RF キャリブレーションなどは含まれません
+- 書き込み中は電源を切らないでください

@@ -5,6 +5,7 @@
 
 #include "app_config.h"
 #include "display.h"
+#include "ota.h"
 #include "progress.h"
 #include "spotify_client.h"
 #include "types.h"
@@ -30,6 +31,8 @@ bool endOfTrackPolled = false;
 uint32_t lastPollMs = 0;
 uint32_t lastBarMs = 0;
 uint32_t lastWifiRetryMs = 0;
+// Wi-Fi が切れてからの時刻 (0 は接続中)
+uint32_t wifiDownSince = 0;
 
 void setState(State next) {
   if (state == next) return;
@@ -123,12 +126,23 @@ void setup() {
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf("[wifi] connected: %s\n", WiFi.localIP().toString().c_str());
+    ota::begin();
     display::showBoot("Contacting daemon...");
     state = State::Boot;
   } else {
-    Serial.println("[wifi] connection failed");
-    state = State::WifiError;
+    Serial.println("[wifi] connection failed -> recovery AP");
+#if OTA_ENABLED
+    ota::startRescueAp();
+    const String apSsid = ota::rescueSsid();
+    const String apIp = ota::rescueIp().toString();
+    Serial.printf("[ota] connect to \"%s\" then open http://%s/update\n",
+                  apSsid.c_str(), apIp.c_str());
+    display::showApInfo(apSsid.c_str(), apIp.c_str());
+#else
     display::showWifiError();
+#endif
+    state = State::WifiError;
+    wifiDownSince = millis();
   }
 
   lastWifiRetryMs = millis();
@@ -138,7 +152,23 @@ void setup() {
 void loop() {
   const uint32_t nowMs = millis();
 
+  ota::loop();
+
   if (WiFi.status() != WL_CONNECTED) {
+    if (wifiDownSince == 0) wifiDownSince = nowMs;
+#if OTA_ENABLED
+    if (!ota::inRescueMode() &&
+        nowMs - wifiDownSince >= WIFI_RESCUE_DELAY_MS) {
+      // しばらく繋がらないときだけ復旧用 AP を立てる。
+      // 一時的な切断で画面を切り替えないための待ち時間。
+      ota::startRescueAp();
+      const String apSsid = ota::rescueSsid();
+      const String apIp = ota::rescueIp().toString();
+      Serial.printf("[ota] connect to \"%s\" then open http://%s/update\n",
+                    apSsid.c_str(), apIp.c_str());
+      display::showApInfo(apSsid.c_str(), apIp.c_str());
+    }
+#endif
     if (state != State::WifiError) {
       setState(State::WifiError);
     }
@@ -153,6 +183,9 @@ void loop() {
 
   if (state == State::WifiError) {
     Serial.printf("[wifi] reconnected: %s\n", WiFi.localIP().toString().c_str());
+    wifiDownSince = 0;
+    ota::exitRescue();
+    ota::begin();
     setState(State::Boot);
     lastPollMs = nowMs - POLL_INTERVAL_MS;
   }
